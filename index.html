@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#111827" />
+
+  <title>Daily Date Tracker</title>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+
+      --background: #f3f4f6;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --primary: #2563eb;
+      --complete: #16a34a;
+      --complete-background: #dcfce7;
+      --danger: #dc2626;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #0b1120;
+        --panel: #111827;
+        --text: #f9fafb;
+        --muted: #9ca3af;
+        --border: #374151;
+        --primary: #60a5fa;
+        --complete: #4ade80;
+        --complete-background: #052e16;
+        --danger: #f87171;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding:
+        max(20px, env(safe-area-inset-top))
+        14px
+        max(30px, env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      margin: 8px 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .date-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .date-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-weight: 700;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      min-height: 54px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--background);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    @media (min-width: 480px) {
+      .actions {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    button {
+      min-height: 54px;
+      border: 0;
+      border-radius: 13px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      transform: scale(0.985);
+    }
+
+    .primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--background);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .message {
+      min-height: 1.3em;
+      margin-top: 10px;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 12px 6px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.35rem;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .progress-track {
+      height: 12px;
+      margin-top: 13px;
+      overflow: hidden;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--complete);
+      transition: width 0.2s ease;
+    }
+
+    .days {
+      display: grid;
+      gap: 10px;
+    }
+
+    .day {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      min-height: 68px;
+      padding: 12px 13px;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      text-align: left;
+    }
+
+    .day.done {
+      background: var(--complete-background);
+      border-color: var(--complete);
+    }
+
+    .check {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 1.4rem;
+    }
+
+    .day.done .check {
+      background: var(--complete);
+      border-color: var(--complete);
+      color: white;
+    }
+
+    .day-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .day-name {
+      display: block;
+      font-weight: 850;
+      font-size: 1rem;
+    }
+
+    .day-date {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .today {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      background: var(--primary);
+      color: white;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .empty {
+      padding: 28px 12px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>Daily Date Tracker</h1>
+
+    <p class="subtitle">
+      Choose a date range, then tap each day to mark it complete.
+      Everything is saved automatically on this device.
+    </p>
+
+    <section class="panel">
+      <div class="date-grid">
+        <label>
+          Start date
+          <input id="startDate" type="date" />
+        </label>
+
+        <label>
+          End date
+          <input id="endDate" type="date" />
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="createButton" class="primary" type="button">
+          Create date range
+        </button>
+
+        <button id="resetButton" class="secondary danger" type="button">
+          Clear all ticks
+        </button>
+      </div>
+
+      <div id="message" class="message"></div>
+    </section>
+
+    <section class="panel">
+      <div class="summary">
+        <div class="stat">
+          <strong id="completedCount">0</strong>
+          <span>completed</span>
+        </div>
+
+        <div class="stat">
+          <strong id="remainingCount">0</strong>
+          <span>remaining</span>
+        </div>
+
+        <div class="stat">
+          <strong id="percentageCount">0%</strong>
+          <span>progress</span>
+        </div>
+      </div>
+
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+    </section>
+
+    <section id="days" class="days"></section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "dailyDateTracker";
+
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    const createButton = document.getElementById("createButton");
+    const resetButton = document.getElementById("resetButton");
+    const message = document.getElementById("message");
+    const daysContainer = document.getElementById("days");
+
+    const completedCount = document.getElementById("completedCount");
+    const remainingCount = document.getElementById("remainingCount");
+    const percentageCount = document.getElementById("percentageCount");
+    const progressBar = document.getElementById("progressBar");
+
+    let state = loadState();
+
+    function getTodayKey() {
+      const today = new Date();
+
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function dateKeyToDate(dateKey) {
+      const [year, month, day] = dateKey.split("-").map(Number);
+
+      return new Date(year, month - 1, day);
+    }
+
+    function dateToKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+
+          if (
+            parsed.startDate &&
+            parsed.endDate &&
+            typeof parsed.completed === "object"
+          ) {
+            return parsed;
+          }
+        }
+      } catch (error) {
+        console.error("Could not load saved data:", error);
+      }
+
+      const today = getTodayKey();
+
+      return {
+        startDate: today,
+        endDate: today,
+        completed: {}
+      };
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        message.textContent =
+          "Your browser blocked local saving. Avoid private browsing mode.";
+      }
+    }
+
+    function getDateRange(startDateKey, endDateKey) {
+      const dates = [];
+
+      const currentDate = dateKeyToDate(startDateKey);
+      const endDate = dateKeyToDate(endDateKey);
+
+      while (currentDate <= endDate) {
+        dates.push(dateToKey(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return dates;
+    }
+
+    function updateSummary(dateKeys) {
+      const completed = dateKeys.filter(
+        dateKey => state.completed[dateKey]
+      ).length;
+
+      const total = dateKeys.length;
+      const remaining = total - completed;
+
+      const percentage =
+        total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      completedCount.textContent = completed;
+      remainingCount.textContent = remaining;
+      percentageCount.textContent = `${percentage}%`;
+      progressBar.style.width = `${percentage}%`;
+    }
+
+    function toggleDay(dateKey) {
+      if (state.completed[dateKey]) {
+        delete state.completed[dateKey];
+      } else {
+        state.completed[dateKey] = true;
+      }
+
+      saveState();
+      render();
+    }
+
+    function render() {
+      startDateInput.value = state.startDate;
+      endDateInput.value = state.endDate;
+
+      message.textContent = "";
+      daysContainer.innerHTML = "";
+
+      if (
+        !state.startDate ||
+        !state.endDate ||
+        state.startDate > state.endDate
+      ) {
+        daysContainer.innerHTML =
+          '<div class="empty">Choose a valid date range.</div>';
+
+        updateSummary([]);
+        return;
+      }
+
+      const dateKeys = getDateRange(
+        state.startDate,
+        state.endDate
+      );
+
+      const todayKey = getTodayKey();
+
+      const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+        weekday: "long"
+      });
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+
+      dateKeys.forEach(dateKey => {
+        const date = dateKeyToDate(dateKey);
+        const isCompleted = Boolean(state.completed[dateKey]);
+
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = isCompleted ? "day done" : "day";
+        button.setAttribute("aria-pressed", String(isCompleted));
+
+        const check = document.createElement("span");
+        check.className = "check";
+        check.textContent = isCompleted ? "✓" : "";
+
+        const dayText = document.createElement("span");
+        dayText.className = "day-text";
+
+        const dayName = document.createElement("span");
+        dayName.className = "day-name";
+        dayName.textContent = weekdayFormatter.format(date);
+
+        const dayDate = document.createElement("span");
+        dayDate.className = "day-date";
+        dayDate.textContent = dateFormatter.format(date);
+
+        dayText.appendChild(dayName);
+        dayText.appendChild(dayDate);
+
+        button.appendChild(check);
+        button.appendChild(dayText);
+
+        if (dateKey === todayKey) {
+          const todayBadge = document.createElement("span");
+          todayBadge.className = "today";
+          todayBadge.textContent = "Today";
+
+          button.appendChild(todayBadge);
+        }
+
+        button.addEventListener("click", () => {
+          toggleDay(dateKey);
+        });
+
+        daysContainer.appendChild(button);
+      });
+
+      updateSummary(dateKeys);
+    }
+
+    function createDateRange() {
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+
+      if (!startDate || !endDate) {
+        message.textContent = "Choose both a start date and an end date.";
+        return;
+      }
+
+      if (startDate > endDate) {
+        message.textContent =
+          "The end date must be after the start date.";
+        return;
+      }
+
+      state.startDate = startDate;
+      state.endDate = endDate;
+
+      const validDates = new Set(
+        getDateRange(startDate, endDate)
+      );
+
+      Object.keys(state.completed).forEach(dateKey => {
+        if (!validDates.has(dateKey)) {
+          delete state.completed[dateKey];
+        }
+      });
+
+      saveState();
+      render();
+    }
+
+    function clearTicks() {
+      const confirmed = window.confirm(
+        "Clear all completed days?"
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      state.completed = {};
+
+      saveState();
+      render();
+    }
+
+    createButton.addEventListener("click", createDateRange);
+    resetButton.addEventListener("click", clearTicks);
+
+    render();
+  </script>
+</body>
+</html>
